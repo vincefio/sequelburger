@@ -1,39 +1,56 @@
+
 var express = require("express");
 
 var router = express.Router();
-var burger = require("../models/burger");
+// edit burger model to match sequelize
+var db = require("../models/");
 
 // get route -> index
 router.get("/", function(req, res) {
+  // send us to the next get function instead.
   res.redirect("/burgers");
 });
 
+// get route, edited to match sequelize
 router.get("/burgers", function(req, res) {
-  // express callback response by calling burger.selectAllBurger
-  burger.all(function(data) {
-    // Wrapping the array of returned burgers in a object so it can be referenced inside our handlebars
-    var hbsObject = { burgers: data };
-    res.render("index", hbsObject);
-  });
+  // replace old function with sequelize function
+  db.Burger.findAll()
+    // use promise method to pass the burgers...
+    .then(function(dbBurger) {
+      console.log(dbBurger);
+      // into the main index, updating the page
+      var hbsObject = { burger: dbBurger };
+      return res.render("index", hbsObject);
+    });
 });
 
-// post route -> back to index
+// post route to create burgers
 router.post("/burgers/create", function(req, res) {
-  // takes the request object using it as input for buger.addBurger
-  burger.create(req.body.burger_name, function(result) {
-    // wrapper for orm.js that using MySQL insert callback will return a log to console,
-    // render back to index with handle
-    console.log(result);
+  // edited burger create to add in a burger_name
+  db.Burger.create({
+    burger_name: req.body.burger_name
+  })
+    // pass the result of our call
+  .then(function(dbBurger) {
+      // log the result to our terminal/bash window
+    console.log(dbBurger);
+      // redirect
     res.redirect("/");
   });
 });
 
-// put route -> back to index
+// put route to devour a burger
 router.put("/burgers/update", function(req, res) {
-  burger.update(req.body.burger_id, function(result) {
-    // wrapper for orm.js that using MySQL update callback will return a log to console,
-    // render back to index with handle
-    console.log(result);
+  // update one of the burgers
+  db.Burger.update({
+    devoured: true
+  },
+    {
+      where: {
+        id: req.body.burger_id
+      }
+    }
+  ).then(function(dbBurger) {
     res.redirect("/");
   });
 });
